@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include "dynamicarray.h"
+#define _BUFFER_IMPL
+#define _SLICE_IMPL
+#include "buffer.h"
+
 
 typedef enum{
     NK_X,
@@ -53,34 +57,39 @@ typedef struct{
     NodeIndex head;
 }Program;
 
-void print_node(Program p,NodeIndex idx){
+void print_node(Buffer* out,Program p,NodeIndex idx){
+    #define MAX_TMP_LEN 32
+    char tmp[MAX_TMP_LEN]={0};
     Node n= p.nodes.data[idx];
+    int tmp_len=0;
     switch (n.kind) {
-        case NK_X: printf("x");break;
-        case NK_Y: printf("y");break;
-        case NK_NUMBER:printf("%f",n.value.number);break;
+        case NK_X: write_string(out,"x");break;
+        case NK_Y: write_string(out,"y");break;
+        case NK_NUMBER:
+        tmp_len=snprintf(tmp,MAX_TMP_LEN,"%f",n.value.number);
+        write_string_len(out,tmp,tmp_len);break;
         case NK_ADD:
-            printf("(");
-            print_node(p,n.value.infix.left);
-            printf("+");
-            print_node(p,n.value.infix.right);
-            printf(")");
+            write_string(out,"(");
+            print_node(out,p,n.value.infix.left);
+            write_string(out,"+");
+            print_node(out,p,n.value.infix.right);
+            write_string(out,")");
             break;
         case NK_MUL:
-            printf("(");
-            print_node(p,n.value.infix.left);
-            printf("*");
-            print_node(p,n.value.infix.right);
-            printf(")");
+            write_string(out,"(");
+            print_node(out,p,n.value.infix.left);
+            write_string(out,"*");
+            print_node(out,p,n.value.infix.right);
+            write_string(out,")");
             break;
         case NK_VEC3:
-            printf("vec3(");
-            print_node(p,n.value.vec3.x);
-            printf(",");
-            print_node(p,n.value.vec3.y);
-            printf(",");
-            print_node(p,n.value.vec3.z);
-            printf(")");
+            write_string(out,"vec3(");
+            print_node(out,p,n.value.vec3.x);
+            write_string(out,",");
+            print_node(out,p,n.value.vec3.y);
+            write_string(out,",");
+            print_node(out,p,n.value.vec3.z);
+            write_string(out,")");
             break;
     }
 }
@@ -182,6 +191,7 @@ NodeIndex random_program(Program *p,int depth){
 }
 
 #define MAX_NODE 1000
+#define MAX_AST_LEN 10000
 int main(void)
 {
     Node nodes[MAX_NODE]={0};
@@ -191,8 +201,10 @@ int main(void)
 
     srand(time(NULL));
     p.head =random_program(&p,10);
-    print_node(p,p.head);
-    printf("\n");
+    Buffer out ={0};
+    STATIC_ZERO_INIT(char,out,out_grow,MAX_AST_LEN);
+    print_node(&out,p,p.head);
+    printf("%.*s\n",out.len,out.data);
     const int screenWidth = 800;
     const int screenHeight = 450;
     SetTraceLogLevel(LOG_WARNING);
