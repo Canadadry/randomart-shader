@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 void gen_img(unsigned char* data,int w, int h){
-    for(int i=0;i<w;i++){
-        for(int j=0;j<h;j++){
+    for(int j=0;j<h;j++){
+        for(int i=0;i<w;i++){
             data[(i+j*w)*4+0]=i*255/w;
             data[(i+j*w)*4+1]=i*255/w;
             data[(i+j*w)*4+2]=i*255/w;
@@ -24,7 +24,7 @@ int main(void)
     img.height=screenHeight-20;
     img.mipmaps = 1;
     img.format=PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    img.data=malloc(img.width*img.height*4*sizeof(char));
+    img.data=malloc(img.width*img.height*4*sizeof(unsigned char));
     if(img.data==NULL){
         printf("cannot allocate buf\n");
         return 1;
@@ -39,11 +39,11 @@ int main(void)
     {
         BeginDrawing();
             ClearBackground(YELLOW);
-            DrawTexture(tex,10,10,RED);
+            DrawTexture(tex,10,10,WHITE);
         EndDrawing();
     }
-    CloseWindow();
     UnloadTexture(tex);
+    CloseWindow();
 
     return 0;
 }
