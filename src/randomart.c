@@ -8,7 +8,8 @@ typedef enum{
     NK_Y,
     NK_NUMBER,
     NK_ADD,
-    NK_MUL
+    NK_MUL,
+    NK_VEC3
 }NodeKind;
 
 typedef int NodeIndex;
@@ -18,11 +19,18 @@ typedef struct{
     NodeIndex right;
 }InfixNode;
 
+typedef struct{
+    NodeIndex x;
+    NodeIndex y;
+    NodeIndex z;
+}Vec3Node;
+
 typedef struct {
     NodeKind kind;
     union {
         float number;
         InfixNode infix;
+        Vec3Node vec3;
     } value;
 } Node;
 
@@ -36,25 +44,43 @@ typedef struct{
 //     array_append_Node(&p->nodes, n);
 //     return (NodeIndex)(p->nodes.len - 1);
 // }
+typedef struct{
+    float x;
+    float y;
+    float z;
+}pixel;
 
-float eval(Program p,NodeIndex head,float x, float y){
+
+
+float eval_float(Program p,NodeIndex head,float x, float y){
     switch(p.nodes.data[head].kind){
+    case NK_VEC3: return 0;
     case NK_X:return x;
     case NK_Y:return y;
     case NK_NUMBER:return p.nodes.data[head].value.number;
-    case NK_ADD:return eval(p,p.nodes.data[head].value.infix.left,x,y)+eval(p,p.nodes.data[head].value.infix.right,x,y);
-    case NK_MUL:return eval(p,p.nodes.data[head].value.infix.left,x,y)*eval(p,p.nodes.data[head].value.infix.right,x,y);
+    case NK_ADD:return eval_float(p,p.nodes.data[head].value.infix.left,x,y)+eval_float(p,p.nodes.data[head].value.infix.right,x,y);
+    case NK_MUL:return eval_float(p,p.nodes.data[head].value.infix.left,x,y)*eval_float(p,p.nodes.data[head].value.infix.right,x,y);
     }
     return 0;
+}
+pixel eval(Program p,NodeIndex head,float x, float y){
+    if (p.nodes.data[head].kind !=  NK_VEC3){
+        return (pixel){0};
+    }
+    return (pixel){
+        .x = eval_float(p,p.nodes.data[head].value.vec3.x,x,y),
+        .y = eval_float(p,p.nodes.data[head].value.vec3.y,x,y),
+        .z = eval_float(p,p.nodes.data[head].value.vec3.z,x,y),
+    };
 }
 
 void gen_img(unsigned char* data,int w, int h,Program p){
     for(int j=0;j<h;j++){
         for(int i=0;i<w;i++){
-            float value = eval(p,p.head,((float)i/(float)w-0.5)*2,((float)j/(float)h-0.5)*2);
-            data[(i+j*w)*4+0]=(value/2+0.5)*255;
-            data[(i+j*w)*4+1]=(value/2+0.5)*255;
-            data[(i+j*w)*4+2]=(value/2+0.5)*255;
+            pixel value = eval(p,p.head,((float)i/(float)w-0.5)*2,((float)j/(float)h-0.5)*2);
+            data[(i+j*w)*4+0]=(value.x/2+0.5)*255;
+            data[(i+j*w)*4+1]=(value.y/2+0.5)*255;
+            data[(i+j*w)*4+2]=(value.z/2+0.5)*255;
             data[(i+j*w)*4+3]=255;
         }
     }
@@ -68,12 +94,30 @@ int main(void)
     p.nodes.data=nodes;
     p.nodes.capacity=MAX_NODE;
 
-    p.head=2;
+    p.head=9;
     nodes[0].kind=NK_X;
     nodes[1].kind=NK_Y;
     nodes[2].kind=NK_MUL;
     nodes[2].value.infix.left=0;
     nodes[2].value.infix.right=1;
+
+    nodes[3].kind=NK_X;
+    nodes[4].kind=NK_Y;
+    nodes[5].kind=NK_ADD;
+    nodes[5].value.infix.left=3;
+    nodes[5].value.infix.right=4;
+
+    nodes[6].kind=NK_X;
+    nodes[7].kind=NK_NUMBER;
+    nodes[7].value.number=0.5;
+    nodes[8].kind=NK_MUL;
+    nodes[8].value.infix.left=6;
+    nodes[8].value.infix.right=7;
+
+    nodes[9].kind=NK_VEC3;
+    nodes[9].value.vec3.x=2;
+    nodes[9].value.vec3.y=5;
+    nodes[9].value.vec3.z=8;
 
     const int screenWidth = 800;
     const int screenHeight = 450;
