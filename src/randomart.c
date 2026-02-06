@@ -1,6 +1,7 @@
 #include "../vendor/raylib/raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "dynamicarray.h"
 
 typedef enum{
@@ -11,6 +12,17 @@ typedef enum{
     NK_MUL,
     NK_VEC3
 }NodeKind;
+
+const char* print_nk(NodeKind nk){
+    switch(nk){
+        case NK_X:return "NK_X";
+        case NK_Y:return "NK_Y";
+        case NK_NUMBER:return "NK_NUMBER";
+        case NK_ADD:return "NK_ADD";
+        case NK_MUL:return "NK_MUL";
+        case NK_VEC3:return "NK_VEC3";
+    }
+}
 
 typedef int NodeIndex;
 
@@ -34,12 +46,44 @@ typedef struct {
     } value;
 } Node;
 
+
 CREATE_ARRAY_TYPE(Node);
 typedef struct{
     ARRAY(Node) nodes;
     NodeIndex head;
 }Program;
 
+void print_node(Program p,NodeIndex idx){
+    Node n= p.nodes.data[idx];
+    switch (n.kind) {
+        case NK_X: printf("x");break;
+        case NK_Y: printf("y");break;
+        case NK_NUMBER:printf("%f",n.value.number);break;
+        case NK_ADD:
+            printf("(");
+            print_node(p,n.value.infix.left);
+            printf("+");
+            print_node(p,n.value.infix.right);
+            printf(")");
+            break;
+        case NK_MUL:
+            printf("(");
+            print_node(p,n.value.infix.left);
+            printf("*");
+            print_node(p,n.value.infix.right);
+            printf(")");
+            break;
+        case NK_VEC3:
+            printf("vec3(");
+            print_node(p,n.value.vec3.x);
+            printf(",");
+            print_node(p,n.value.vec3.y);
+            printf(",");
+            print_node(p,n.value.vec3.z);
+            printf(")");
+            break;
+    }
+}
 // static NodeIndex program_add_node(Program *p, Node n) {
 //     array_append_Node(&p->nodes, n);
 //     return (NodeIndex)(p->nodes.len - 1);
@@ -86,7 +130,61 @@ void gen_img(unsigned char* data,int w, int h,Program p){
     }
 }
 
-#define MAX_NODE 10
+NodeKind random_node(){
+    int index= rand()%5;
+    switch(index){
+        case 0: return NK_NUMBER;
+        case 1: return NK_X;
+        case 2: return NK_Y;
+        case 3: return NK_ADD;
+        case 4: return NK_MUL;
+    }
+    return NK_NUMBER;
+}
+
+NodeKind random_node_terminated(){
+    int index= rand()%3;
+    switch(index){
+        case 0: return NK_NUMBER;
+        case 1: return NK_X;
+        case 2: return NK_Y;
+    }
+    return NK_NUMBER;
+}
+
+NodeIndex random_branch(Program *p,int depth){
+    p->nodes.len+=1;
+    int cell =p->nodes.len;
+    NodeKind nk = random_node();
+    if (depth==0){
+        nk =random_node_terminated();
+    }
+    p->nodes.data[cell].kind=nk;
+    switch(nk){
+        case NK_NUMBER:
+            p->nodes.data[cell].value.number=(float)rand() / RAND_MAX-0.5;
+            break;
+        case NK_ADD:
+        case NK_MUL:
+            p->nodes.data[cell].value.infix.left=random_branch(p,depth-1);
+            p->nodes.data[cell].value.infix.right=random_branch(p,depth-1);
+            break;
+        default:break;
+    }
+    return cell;
+}
+
+NodeIndex random_program(Program *p,int depth){
+    p->nodes.len+=1;
+    int cell =p->nodes.len;
+    p->nodes.data[cell].kind=NK_VEC3;
+    p->nodes.data[cell].value.vec3.x=random_branch(p,depth-1);
+    p->nodes.data[cell].value.vec3.y=random_branch(p,depth-1);
+    p->nodes.data[cell].value.vec3.z=random_branch(p,depth-1);
+    return cell;
+}
+
+#define MAX_NODE 100
 int main(void)
 {
     Node nodes[MAX_NODE]={0};
@@ -94,30 +192,34 @@ int main(void)
     p.nodes.data=nodes;
     p.nodes.capacity=MAX_NODE;
 
-    p.head=9;
-    nodes[0].kind=NK_X;
-    nodes[1].kind=NK_Y;
-    nodes[2].kind=NK_MUL;
-    nodes[2].value.infix.left=0;
-    nodes[2].value.infix.right=1;
+    srand(time(NULL));
+    p.head =random_program(&p,10);
+    print_node(p,p.head);
+    printf("\n");
+    // p.head=9;
+    // nodes[0].kind=NK_X;
+    // nodes[1].kind=NK_Y;
+    // nodes[2].kind=NK_MUL;
+    // nodes[2].value.infix.left=0;
+    // nodes[2].value.infix.right=1;
 
-    nodes[3].kind=NK_X;
-    nodes[4].kind=NK_Y;
-    nodes[5].kind=NK_ADD;
-    nodes[5].value.infix.left=3;
-    nodes[5].value.infix.right=4;
+    // nodes[3].kind=NK_X;
+    // nodes[4].kind=NK_Y;
+    // nodes[5].kind=NK_ADD;
+    // nodes[5].value.infix.left=3;
+    // nodes[5].value.infix.right=4;
 
-    nodes[6].kind=NK_X;
-    nodes[7].kind=NK_NUMBER;
-    nodes[7].value.number=0.5;
-    nodes[8].kind=NK_MUL;
-    nodes[8].value.infix.left=6;
-    nodes[8].value.infix.right=7;
+    // nodes[6].kind=NK_X;
+    // nodes[7].kind=NK_NUMBER;
+    // nodes[7].value.number=0.5;
+    // nodes[8].kind=NK_MUL;
+    // nodes[8].value.infix.left=6;
+    // nodes[8].value.infix.right=7;
 
-    nodes[9].kind=NK_VEC3;
-    nodes[9].value.vec3.x=2;
-    nodes[9].value.vec3.y=5;
-    nodes[9].value.vec3.z=8;
+    // nodes[9].kind=NK_VEC3;
+    // nodes[9].value.vec3.x=2;
+    // nodes[9].value.vec3.y=5;
+    // nodes[9].value.vec3.z=8;
 
     const int screenWidth = 800;
     const int screenHeight = 450;
