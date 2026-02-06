@@ -131,14 +131,11 @@ void gen_img(unsigned char* data,int w, int h,Program p){
 }
 
 NodeKind random_node(){
-    int index= rand()%5;
-    switch(index){
-        case 0: return NK_NUMBER;
-        case 1: return NK_X;
-        case 2: return NK_Y;
-        case 3: return NK_ADD;
-        case 4: return NK_MUL;
-    }
+    int r = rand() % 100;
+    if (r < 40) return NK_ADD;
+    if (r < 70) return NK_MUL;
+    if (r < 80) return NK_X;
+    if (r < 90) return NK_Y;
     return NK_NUMBER;
 }
 
@@ -153,8 +150,8 @@ NodeKind random_node_terminated(){
 }
 
 NodeIndex random_branch(Program *p,int depth){
-    p->nodes.len+=1;
     int cell =p->nodes.len;
+    p->nodes.len+=1;
     NodeKind nk = random_node();
     if (depth==0){
         nk =random_node_terminated();
@@ -175,8 +172,8 @@ NodeIndex random_branch(Program *p,int depth){
 }
 
 NodeIndex random_program(Program *p,int depth){
-    p->nodes.len+=1;
     int cell =p->nodes.len;
+    p->nodes.len+=1;
     p->nodes.data[cell].kind=NK_VEC3;
     p->nodes.data[cell].value.vec3.x=random_branch(p,depth-1);
     p->nodes.data[cell].value.vec3.y=random_branch(p,depth-1);
@@ -184,7 +181,7 @@ NodeIndex random_program(Program *p,int depth){
     return cell;
 }
 
-#define MAX_NODE 100
+#define MAX_NODE 1000
 int main(void)
 {
     Node nodes[MAX_NODE]={0};
@@ -196,33 +193,9 @@ int main(void)
     p.head =random_program(&p,10);
     print_node(p,p.head);
     printf("\n");
-    // p.head=9;
-    // nodes[0].kind=NK_X;
-    // nodes[1].kind=NK_Y;
-    // nodes[2].kind=NK_MUL;
-    // nodes[2].value.infix.left=0;
-    // nodes[2].value.infix.right=1;
-
-    // nodes[3].kind=NK_X;
-    // nodes[4].kind=NK_Y;
-    // nodes[5].kind=NK_ADD;
-    // nodes[5].value.infix.left=3;
-    // nodes[5].value.infix.right=4;
-
-    // nodes[6].kind=NK_X;
-    // nodes[7].kind=NK_NUMBER;
-    // nodes[7].value.number=0.5;
-    // nodes[8].kind=NK_MUL;
-    // nodes[8].value.infix.left=6;
-    // nodes[8].value.infix.right=7;
-
-    // nodes[9].kind=NK_VEC3;
-    // nodes[9].value.vec3.x=2;
-    // nodes[9].value.vec3.y=5;
-    // nodes[9].value.vec3.z=8;
-
     const int screenWidth = 800;
     const int screenHeight = 450;
+    SetTraceLogLevel(LOG_WARNING);
     InitWindow(screenWidth, screenHeight, "raylib [shaders] example - multi sample2d");
 
     Image img = (Image){0};
