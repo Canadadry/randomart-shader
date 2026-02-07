@@ -1,6 +1,6 @@
 # Random Expression Shader
 
-Small experimental project that generates random mathematical expressions, builds an AST, and evaluates it either on the CPU or as a GLSL fragment shader using **raylib**.
+Small experimental project that generates random mathematical expressions, builds an AST, and evaluates it as a GLSL fragment shader using **raylib**.
 
 Each run produces a different procedural image.
 RGB values come from a randomly generated `vec3(x, y, t)` expression.
@@ -14,12 +14,6 @@ vec3((t+t),(y+((((((((x+-0.187478)*(x+x))*((0.469741+x)+(x*0.152370)))*x)*0.2746
 we got
 
 ![Random Expression Shader output](screenshot.png)
-
-## Features
-
-* Random AST generation (add, mul, constants, x/y/t)
-* Single expression evaluated as:
-  * Runtime-generated GLSL fragment shader
 
 ## Build
 
