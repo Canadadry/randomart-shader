@@ -4,19 +4,26 @@
 #define MACOS_FLAGS "-framework CoreVideo -framework CoreAudio -framework IOKit -framework Cocoa -framework OpenGL"
 
 
-void build_lib(int debug){
+void build_lib(int debug,int gpu){
     BuildCtx ctx = build_init();
     build_set_src_dir(&ctx, "src");
     build_set_build_dir(&ctx, "build");
     build_make_dir(ctx.build_dir);
-
     if (!debug){
-        build_set_cflags(&ctx, "-Wall -O2");
+        if(gpu){
+            build_set_cflags(&ctx, "-Wall -O2 -D_GPU");
+        }else{
+            build_set_cflags(&ctx, "-Wall -O2");
+        }
         build_set_ldflags(&ctx, "-Lvendor/raylib/macos -lraylib "MACOS_FLAGS);
         build_add_static_lib(&ctx, "lib"TARGET".a");
         build_add_entry_point(&ctx, "expr.c",TARGET);
     }else{
-        build_set_cflags(&ctx, "-Wall -Werror -g -fsanitize=address -DBUILD_DEBUG");
+        if(gpu){
+            build_set_cflags(&ctx, "-Wall -Werror -g -fsanitize=address -DBUILD_DEBUG -D_GPU");
+        }else{
+            build_set_cflags(&ctx, "-Wall -Werror -g -fsanitize=address -DBUILD_DEBUG");
+        }
         build_set_ldflags(&ctx, "-fsanitize=address -Lvendor/raylib/macos -lraylib "MACOS_FLAGS);
         build_add_static_lib(&ctx, "lib"TARGET"d.a");
         build_add_entry_point(&ctx, "expr.c",TARGET"d");
@@ -47,7 +54,7 @@ int main(int argc, char **argv) {
         BUILD_RUN_CMD("rm", "-rf", "build");
     }
 
-    build_lib(build_has_arg(argc, argv,  "debug","test"));
+    build_lib(build_has_arg(argc, argv,  "debug","test"),build_has_arg(argc, argv,  "gpu"));
     if (build_has_arg(argc, argv,  "test")){
         build_test();
         BUILD_RUN_CMD("./build/tests/run_testsd");
