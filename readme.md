@@ -19,10 +19,7 @@ we got
 
 * Random AST generation (add, mul, constants, x/y/t)
 * Single expression evaluated as:
-
-  * CPU image buffer, or
   * Runtime-generated GLSL fragment shader
-* Optional time-based animation (`t`)
 
 ## Build
 

@@ -97,52 +97,6 @@ void print_node(Buffer* out,Program p,NodeIndex idx){
             break;
     }
 }
-// static NodeIndex program_add_node(Program *p, Node n) {
-//     array_append_Node(&p->nodes, n);
-//     return (NodeIndex)(p->nodes.len - 1);
-// }
-typedef struct{
-    float x;
-    float y;
-    float z;
-}pixel;
-
-
-
-float eval_float(Program p,NodeIndex head,float x, float y,float t){
-    switch(p.nodes.data[head].kind){
-    case NK_VEC3: return 0;
-    case NK_X:return x;
-    case NK_Y:return y;
-    case NK_T:return t;
-    case NK_NUMBER:return p.nodes.data[head].value.number;
-    case NK_ADD:return eval_float(p,p.nodes.data[head].value.infix.left,x,y,t)+eval_float(p,p.nodes.data[head].value.infix.right,x,y,t);
-    case NK_MUL:return eval_float(p,p.nodes.data[head].value.infix.left,x,y,t)*eval_float(p,p.nodes.data[head].value.infix.right,x,y,t);
-    }
-    return 0;
-}
-pixel eval(Program p,NodeIndex head,float x, float y,float t){
-    if (p.nodes.data[head].kind !=  NK_VEC3){
-        return (pixel){0};
-    }
-    return (pixel){
-        .x = eval_float(p,p.nodes.data[head].value.vec3.x,x,y,t),
-        .y = eval_float(p,p.nodes.data[head].value.vec3.y,x,y,t),
-        .z = eval_float(p,p.nodes.data[head].value.vec3.z,x,y,t),
-    };
-}
-
-void gen_img(unsigned char* data,int w, int h,Program p){
-    for(int j=0;j<h;j++){
-        for(int i=0;i<w;i++){
-            pixel value = eval(p,p.head,((float)i/(float)w-0.5)*2,((float)j/(float)h-0.5)*2,0);
-            data[(i+j*w)*4+0]=(value.x/2+0.5)*255;
-            data[(i+j*w)*4+1]=(value.y/2+0.5)*255;
-            data[(i+j*w)*4+2]=(value.z/2+0.5)*255;
-            data[(i+j*w)*4+3]=255;
-        }
-    }
-}
 
 NodeKind random_node(){
     int r = rand() % 100;
@@ -233,7 +187,7 @@ int main(void)
     SetTraceLogLevel(LOG_WARNING);
     InitWindow(screenWidth, screenHeight, "randomart");
 
-    #ifdef _GPU
+
     char shaderCode[16384];
     snprintf(shaderCode, sizeof(shaderCode),fragmentTemplate, out.len,out.data);
     Shader shader = LoadShaderFromMemory(0, shaderCode);
@@ -257,31 +211,6 @@ int main(void)
         EndDrawing();
     }
     UnloadShader(shader);
-    #else
-    Image img = (Image){0};
-    img.width=screenWidth;
-    img.height=screenHeight;
-    img.mipmaps = 1;
-    img.format=PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    img.data=malloc(img.width*img.height*4*sizeof(unsigned char));
-    if(img.data==NULL){
-        printf("cannot allocate buf\n");
-        return 1;
-    }
-    gen_img(img.data,img.width,img.height,p);
-    Texture2D tex = LoadTextureFromImage(img);
-    free(img.data);
-    SetTargetFPS(60);
-    while (!WindowShouldClose())
-    {
-        BeginDrawing();
-            ClearBackground(YELLOW);
-            DrawTexture(tex,0, 0, WHITE);
-            EndShaderMode();
-        EndDrawing();
-    }
-    UnloadTexture(tex);
-    #endif
     CloseWindow();
 
     return 0;
